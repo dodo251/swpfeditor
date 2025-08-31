@@ -16,6 +16,8 @@
                 <Button Content="重做" Name="BtnRedo" IsEnabled="False" />
                 <Separator/>
                 <Button Content="验证" Name="BtnValidate" Click="BtnValidate_OnClick" />
+                <Separator/>
+                <Button Content="导出运行时XML" Name="BtnExportRuntime" Click="BtnExportRuntime_OnClick" />
             </ToolBar>
         </ToolBarTray>
         <Grid>

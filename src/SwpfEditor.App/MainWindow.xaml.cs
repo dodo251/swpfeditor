@@ -7,6 +7,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Xml.Linq;
 using Microsoft.Win32;
+using SwpfEditor.App.ViewModels;
+using SwpfEditor.Domain.Models;
 
 namespace SwpfEditor.App
 {
@@ -15,54 +17,98 @@ namespace SwpfEditor.App
     /// </summary>
     public partial class MainWindow : Window
     {
-        private XDocument? _currentDoc;
-        private string? _currentPath;
+        private readonly MainViewModel _viewModel;
 
-        public MainWindow()
+        public MainWindow(MainViewModel viewModel)
         {
             InitializeComponent();
-            // Auto load sample if exists
-            var sample = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "samples", "test.xml");
-            if (File.Exists(sample))
-            {
-                LoadFile(sample);
-            }
+            _viewModel = viewModel;
+            DataContext = _viewModel;
+            
+            // Subscribe to validation errors changes
+            _viewModel.ValidationErrors.CollectionChanged += (s, e) => RefreshValidationPanel();
+            
+            Loaded += MainWindow_Loaded;
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Try to load sample files on startup
+            TryLoadSampleFiles();
         }
 
         private void BtnNew_OnClick(object sender, RoutedEventArgs e)
         {
-            _currentDoc = new XDocument(new XElement("test"));
-            _currentPath = null;
+            _viewModel.NewFileCommand.Execute(null);
             RefreshTree();
         }
 
         private void BtnOpen_OnClick(object sender, RoutedEventArgs e)
         {
-            var dlg = new OpenFileDialog { Filter = "XML (*.xml)|*.xml" };
-            if (dlg.ShowDialog() == true)
-            {
-                LoadFile(dlg.FileName);
-            }
+            _viewModel.OpenFileCommand.Execute(null);
+            RefreshTree();
         }
 
         private void BtnSave_OnClick(object sender, RoutedEventArgs e)
         {
-            if (_currentDoc == null) return;
-            if (string.IsNullOrEmpty(_currentPath))
-            {
-                var dlg = new SaveFileDialog { Filter = "XML (*.xml)|*.xml", FileName = "test.xml" };
-                if (dlg.ShowDialog() != true) return;
-                _currentPath = dlg.FileName;
-            }
-            var settings = new UTF8Encoding(false);
-            using var fs = new StreamWriter(_currentPath!, false, settings);
-            // Preserve attribute order by writing manually (LINQ to XML preserves by insertion order we keep) with SaveOptions.DisableFormatting then simple pretty print.
-            _currentDoc.Save(fs, SaveOptions.None);
+            _viewModel.SaveFileCommand.Execute(null);
         }
 
         private void BtnValidate_OnClick(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("验证功能占位", "Validate");
+            _viewModel.ValidateFileCommand.Execute(null);
+        }
+
+        private void BtnExportRuntime_OnClick(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ExportRuntimeXmlCommand.Execute(null);
+        }
+
+        private void ScriptTree_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            _viewModel.SelectedTreeItem = e.NewValue;
+            RefreshPropertiesPanel();
+        }
+
+        private void TryLoadSampleFiles()
+        {
+            try
+            {
+                var appDir = AppDomain.CurrentDomain.BaseDirectory;
+                var samplePath = Path.Combine(appDir, "samples", "test.xml");
+                
+                // Try to find samples relative to executable or in repository structure
+                if (!File.Exists(samplePath))
+                {
+                    // Try going up directories to find samples (for development scenario)
+                    var currentDir = new DirectoryInfo(appDir);
+                    while (currentDir != null && currentDir.Parent != null)
+                    {
+                        var testSamplesPath = Path.Combine(currentDir.FullName, "samples", "test.xml");
+                        if (File.Exists(testSamplesPath))
+                        {
+                            samplePath = testSamplesPath;
+                            break;
+                        }
+                        currentDir = currentDir.Parent;
+                    }
+                }
+
+                if (File.Exists(samplePath))
+                {
+                    LoadFile(samplePath);
+                }
+                else
+                {
+                    // Create a simple test if no samples found
+                    _viewModel.NewFileCommand.Execute(null);
+                }
+            }
+            catch
+            {
+                // If all else fails, create a new test
+                _viewModel.NewFileCommand.Execute(null);
+            }
         }
 
         private void LoadFile(string path)
@@ -71,9 +117,17 @@ namespace SwpfEditor.App
             {
                 using var sr = new StreamReader(path, Encoding.UTF8, true);
                 var xml = XDocument.Load(sr, LoadOptions.SetLineInfo);
-                _currentDoc = xml;
-                _currentPath = path;
-                RefreshTree();
+                
+                if (xml.Root != null)
+                {
+                    // Use the ViewModel's load logic by simulating file open
+                    _viewModel.CurrentFilePath = path;
+                    var test = SwpfEditor.Infrastructure.Mapping.XmlTestMapper.FromXElement(xml.Root);
+                    _viewModel.CurrentTest = test;
+                    _viewModel.HasUnsavedChanges = false;
+                    
+                    RefreshTree();
+                }
             }
             catch (Exception ex)
             {
@@ -85,71 +139,174 @@ namespace SwpfEditor.App
         {
             ScriptTree.Items.Clear();
             PropertiesPanel.Children.Clear();
-            if (_currentDoc?.Root == null) return;
-            ScriptTree.Items.Add(CreateTreeItem(_currentDoc.Root));
-        }
-
-        private TreeViewItem CreateTreeItem(XElement element)
-        {
-            var tvi = new TreeViewItem { Header = ElementHeader(element), Tag = element, IsExpanded = true };
-            foreach (var child in element.Elements())
+            
+            if (_viewModel.CurrentTest == null) return;
+            
+            // For now, create a simple tree representation
+            // TODO: Implement proper tree binding with templates
+            var rootItem = new TreeViewItem
             {
-                tvi.Items.Add(CreateTreeItem(child));
+                Header = $"Test: {_viewModel.CurrentTest.Alias ?? _viewModel.CurrentTest.Id}",
+                Tag = _viewModel.CurrentTest,
+                IsExpanded = true
+            };
+
+            // Add sections
+            if (_viewModel.CurrentTest.Sections?.SectionList != null)
+            {
+                foreach (var section in _viewModel.CurrentTest.Sections.SectionList)
+                {
+                    var sectionItem = new TreeViewItem
+                    {
+                        Header = $"Section: {section.Alias ?? section.Id}",
+                        Tag = section,
+                        IsExpanded = true
+                    };
+
+                    // Add steps in section
+                    foreach (var step in section.Steps)
+                    {
+                        var stepItem = new TreeViewItem
+                        {
+                            Header = ElementHeader(step),
+                            Tag = step
+                        };
+                        sectionItem.Items.Add(stepItem);
+                    }
+
+                    rootItem.Items.Add(sectionItem);
+                }
             }
-            return tvi;
+
+            // Add direct steps
+            if (_viewModel.CurrentTest.Steps?.StepList != null)
+            {
+                foreach (var step in _viewModel.CurrentTest.Steps.StepList)
+                {
+                    var stepItem = new TreeViewItem
+                    {
+                        Header = ElementHeader(step),
+                        Tag = step
+                    };
+                    rootItem.Items.Add(stepItem);
+                }
+            }
+
+            ScriptTree.Items.Add(rootItem);
         }
 
-        private string ElementHeader(XElement el)
+        private string ElementHeader(Step step)
         {
-            var id = el.Attribute("id")?.Value;
-            var alias = el.Attribute("alias")?.Value;
-            if (!string.IsNullOrWhiteSpace(alias)) return $"{el.Name.LocalName} ({alias})";
-            if (!string.IsNullOrWhiteSpace(id)) return $"{el.Name.LocalName} ({id})";
-            return el.Name.LocalName;
+            var name = !string.IsNullOrEmpty(step.Alias) ? step.Alias : step.Id;
+            var targetInfo = !string.IsNullOrEmpty(step.Target) ? $" -> {step.Target}" : "";
+            return $"Step: {name}{targetInfo}";
         }
 
-        private void ScriptTree_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        private void RefreshPropertiesPanel()
         {
             PropertiesPanel.Children.Clear();
-            if (ScriptTree.SelectedItem is not TreeViewItem tvi || tvi.Tag is not XElement el) return;
-            AddLabel($"元素: <{el.Name.LocalName}>");
-            foreach (var attr in el.Attributes())
+            
+            if (_viewModel.SelectedTreeItem == null) return;
+
+            // Create simple property editors based on selected item type
+            if (_viewModel.SelectedTreeItem is Test test)
             {
-                AddAttrEditor(el, attr);
+                AddPropertyEditor("ID", test.Id, value => test.Id = value);
+                AddPropertyEditor("Alias", test.Alias ?? "", value => test.Alias = string.IsNullOrEmpty(value) ? null : value);
+                AddPropertyEditor("Description", test.Description ?? "", value => test.Description = string.IsNullOrEmpty(value) ? null : value);
+            }
+            else if (_viewModel.SelectedTreeItem is Section section)
+            {
+                AddPropertyEditor("ID", section.Id, value => section.Id = value);
+                AddPropertyEditor("Alias", section.Alias ?? "", value => section.Alias = string.IsNullOrEmpty(value) ? null : value);
+            }
+            else if (_viewModel.SelectedTreeItem is Step step)
+            {
+                AddPropertyEditor("ID", step.Id, value => step.Id = value);
+                AddPropertyEditor("Alias", step.Alias ?? "", value => step.Alias = string.IsNullOrEmpty(value) ? null : value);
+                AddPropertyEditor("Target", step.Target ?? "", value => step.Target = string.IsNullOrEmpty(value) ? null : value);
+                AddPropertyEditor("Command", step.Command ?? "", value => step.Command = string.IsNullOrEmpty(value) ? null : value);
+                AddPropertyEditor("Timeout", step.Timeout?.ToString() ?? "", value => step.Timeout = int.TryParse(value, out var t) ? t : null);
+                
+                // Target Type combo
+                AddTargetTypeEditor(step);
+                AddHttpMethodEditor(step);
             }
         }
 
-        private void AddLabel(string text)
-        {
-            PropertiesPanel.Children.Add(new TextBlock { Text = text, Margin = new Thickness(0, 8, 0, 4), FontWeight = FontWeights.Bold });
-        }
-
-        private void AddAttrEditor(XElement owner, XAttribute attr)
+        private void AddPropertyEditor(string label, string value, Action<string> onChanged)
         {
             var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 2) };
-            panel.Children.Add(new TextBlock { Text = attr.Name.LocalName, Width = 120, VerticalAlignment = VerticalAlignment.Center });
-            var tb = new TextBox { Text = attr.Value, Width = 200, Tag = (owner, attr.Name) };
-            tb.TextChanged += AttrTextChanged;
-            panel.Children.Add(tb);
+            
+            var labelControl = new Label { Content = label, Width = 80 };
+            var textBox = new TextBox { Text = value, Width = 200 };
+            
+            textBox.TextChanged += (s, e) => 
+            {
+                onChanged(textBox.Text);
+                _viewModel.HasUnsavedChanges = true;
+            };
+            
+            panel.Children.Add(labelControl);
+            panel.Children.Add(textBox);
             PropertiesPanel.Children.Add(panel);
         }
 
-        private void AttrTextChanged(object sender, TextChangedEventArgs e)
+        private void AddTargetTypeEditor(Step step)
         {
-            if (sender is TextBox tb && tb.Tag is ValueTuple<XElement, XName> tag)
+            var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 2) };
+            
+            var label = new Label { Content = "Target Type", Width = 80 };
+            var combo = new ComboBox { Width = 200 };
+            
+            foreach (var type in Enum.GetValues<TargetType>())
             {
-                var (owner, name) = tag;
-                var xa = owner.Attribute(name);
-                if (xa != null && xa.Value != tb.Text)
-                {
-                    xa.Value = tb.Text; // In-place keeps ordering
-                    // Update header of tree node
-                    if (ScriptTree.SelectedItem is TreeViewItem sel && sel.Tag == owner)
-                    {
-                        sel.Header = ElementHeader(owner);
-                    }
-                }
+                combo.Items.Add(type);
             }
+            
+            combo.SelectedItem = step.TargetType;
+            combo.SelectionChanged += (s, e) => 
+            {
+                step.TargetType = (TargetType?)combo.SelectedItem;
+                _viewModel.HasUnsavedChanges = true;
+            };
+            
+            panel.Children.Add(label);
+            panel.Children.Add(combo);
+            PropertiesPanel.Children.Add(panel);
+        }
+
+        private void AddHttpMethodEditor(Step step)
+        {
+            if (step.TargetType != TargetType.Http) return;
+
+            var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 2) };
+            
+            var label = new Label { Content = "Method", Width = 80 };
+            var combo = new ComboBox { Width = 200 };
+            
+            foreach (var method in Enum.GetValues<HttpMethod>())
+            {
+                combo.Items.Add(method);
+            }
+            
+            combo.SelectedItem = step.Method;
+            combo.SelectionChanged += (s, e) => 
+            {
+                step.Method = (HttpMethod?)combo.SelectedItem;
+                _viewModel.HasUnsavedChanges = true;
+            };
+            
+            panel.Children.Add(label);
+            panel.Children.Add(combo);
+            PropertiesPanel.Children.Add(panel);
+        }
+
+        private void RefreshValidationPanel()
+        {
+            // Update validation display (will be improved in later stage)
+            var errorCount = _viewModel.ValidationErrors.Count;
+            Title = $"SMS Script Editor - {errorCount} validation issues";
         }
     }
 }

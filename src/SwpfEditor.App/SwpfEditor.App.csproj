@@ -12,6 +12,19 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    <PackageReference Include="GongSolutions.WPF.DragDrop" Version="3.2.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SwpfEditor.Domain\SwpfEditor.Domain.csproj" />
+    <ProjectReference Include="..\SwpfEditor.Infrastructure\SwpfEditor.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\schemas\*.xsd" CopyToOutputDirectory="PreserveNewest" Link="schemas\%(Filename)%(Extension)" />
+    <None Include="..\..\samples\*.xml" CopyToOutputDirectory="PreserveNewest" Link="samples\%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>
