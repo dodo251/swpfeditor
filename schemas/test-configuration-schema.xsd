@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://sms.test/config/1.0"
+           xmlns:tns="http://sms.test/config/1.0"
+           elementFormDefault="qualified">
+
+  <!-- Basic types -->
+  <xs:simpleType name="ConnectionType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="ssh"/>
+      <xs:enumeration value="http"/>
+      <xs:enumeration value="telnet"/>
+      <xs:enumeration value="manual"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Connection definitions -->
+  <xs:complexType name="SshConnection">
+    <xs:attribute name="Name" type="xs:string" use="required"/>
+    <xs:attribute name="Host" type="xs:string" use="required"/>
+    <xs:attribute name="Port" type="xs:positiveInteger" use="required"/>
+    <xs:attribute name="Username" type="xs:string" use="optional"/>
+    <xs:attribute name="Password" type="xs:string" use="optional"/>
+    <xs:attribute name="PrivateKeyPath" type="xs:string" use="optional"/>
+    <xs:attribute name="Prompt" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="HttpConnection">
+    <xs:attribute name="Name" type="xs:string" use="required"/>
+    <xs:attribute name="BaseUrl" type="xs:anyURI" use="required"/>
+    <xs:attribute name="Username" type="xs:string" use="optional"/>
+    <xs:attribute name="Password" type="xs:string" use="optional"/>
+    <xs:attribute name="Timeout" type="xs:positiveInteger" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="TelnetConnection">
+    <xs:attribute name="Name" type="xs:string" use="required"/>
+    <xs:attribute name="Host" type="xs:string" use="required"/>
+    <xs:attribute name="Port" type="xs:positiveInteger" use="required"/>
+    <xs:attribute name="Username" type="xs:string" use="optional"/>
+    <xs:attribute name="Password" type="xs:string" use="optional"/>
+    <xs:attribute name="Prompt" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <!-- Container types -->
+  <xs:complexType name="SshList">
+    <xs:sequence>
+      <xs:element name="SshConnection" type="tns:SshConnection" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="HttpList">
+    <xs:sequence>
+      <xs:element name="HttpConnection" type="tns:HttpConnection" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TelnetList">
+    <xs:sequence>
+      <xs:element name="TelnetConnection" type="tns:TelnetConnection" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Variables and constants -->
+  <xs:complexType name="Variable">
+    <xs:attribute name="Name" type="xs:string" use="required"/>
+    <xs:attribute name="Value" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="Variables">
+    <xs:sequence>
+      <xs:element name="Variable" type="tns:Variable" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Constant">
+    <xs:attribute name="Name" type="xs:string" use="required"/>
+    <xs:attribute name="Value" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="Constants">
+    <xs:sequence>
+      <xs:element name="Constant" type="tns:Constant" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Input definitions -->
+  <xs:complexType name="Input">
+    <xs:attribute name="Name" type="xs:string" use="required"/>
+    <xs:attribute name="Value" type="xs:string" use="required"/>
+    <xs:attribute name="Type" type="xs:string" use="optional" default="string"/>
+  </xs:complexType>
+
+  <xs:complexType name="Inputs">
+    <xs:sequence>
+      <xs:element name="Input" type="tns:Input" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- UUT (Unit Under Test) -->
+  <xs:complexType name="UUT">
+    <xs:sequence>
+      <xs:any processContents="skip" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Main configuration type -->
+  <xs:complexType name="TestConfiguration">
+    <xs:sequence>
+      <xs:element name="UUT" type="tns:UUT" minOccurs="0"/>
+      <xs:element name="LogDirectory" type="xs:string" minOccurs="0"/>
+      <xs:element name="SshList" type="tns:SshList" minOccurs="0"/>
+      <xs:element name="TelnetList" type="tns:TelnetList" minOccurs="0"/>
+      <xs:element name="HttpList" type="tns:HttpList" minOccurs="0"/>
+      <xs:element name="Variables" type="tns:Variables" minOccurs="0"/>
+      <xs:element name="Constants" type="tns:Constants" minOccurs="0"/>
+      <xs:element name="Inputs" type="tns:Inputs" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Root element -->
+  <xs:element name="TestConfiguration" type="tns:TestConfiguration">
+    <!-- Unique constraints -->
+    <xs:key name="sshConnectionNameKey">
+      <xs:selector xpath="tns:SshList/tns:SshConnection"/>
+      <xs:field xpath="@Name"/>
+    </xs:key>
+
+    <xs:key name="httpConnectionNameKey">
+      <xs:selector xpath="tns:HttpList/tns:HttpConnection"/>
+      <xs:field xpath="@Name"/>
+    </xs:key>
+
+    <xs:key name="telnetConnectionNameKey">
+      <xs:selector xpath="tns:TelnetList/tns:TelnetConnection"/>
+      <xs:field xpath="@Name"/>
+    </xs:key>
+
+    <xs:key name="variableNameKey">
+      <xs:selector xpath="tns:Variables/tns:Variable"/>
+      <xs:field xpath="@Name"/>
+    </xs:key>
+
+    <xs:key name="constantNameKey">
+      <xs:selector xpath="tns:Constants/tns:Constant"/>
+      <xs:field xpath="@Name"/>
+    </xs:key>
+
+    <xs:key name="inputNameKey">
+      <xs:selector xpath="tns:Inputs/tns:Input"/>
+      <xs:field xpath="@Name"/>
+    </xs:key>
+  </xs:element>
+
+</xs:schema>

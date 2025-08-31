@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://sms.test/schema/1.1"
+           xmlns:tns="http://sms.test/schema/1.1"
+           elementFormDefault="qualified"
+           version="1.1">
+
+  <!-- Basic string types -->
+  <xs:simpleType name="IdString">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Za-z0-9_\-]+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="NonEmptyString">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Enumerations -->
+  <xs:simpleType name="TargetType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="ssh"/>
+      <xs:enumeration value="http"/>
+      <xs:enumeration value="telnet"/>
+      <xs:enumeration value="manual"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="HttpMethod">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="GET"/>
+      <xs:enumeration value="POST"/>
+      <xs:enumeration value="PUT"/>
+      <xs:enumeration value="DELETE"/>
+      <xs:enumeration value="HEAD"/>
+      <xs:enumeration value="PATCH"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="SectionType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="serial"/>
+      <xs:enumeration value="manual"/>
+      <xs:enumeration value="final"/>
+      <xs:enumeration value="cleanup"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="RefMode">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="id"/>
+      <xs:enumeration value="alias"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Expect validation types -->
+  <xs:simpleType name="ExpectRegex">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="REGEX:.+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ExpectCompare">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(GE|LE|GT|LT|EQ|NE):-?\d+(\.\d+)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ExpectContains">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(CONTAINS|STARTS|ENDS):.+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ExpectLiteral">
+    <xs:restriction base="xs:string">
+      <!-- Anything that doesn't start with known prefixes -->
+      <xs:pattern value="(?!REGEX:|GE:|LE:|GT:|LT:|EQ:|NE:|CONTAINS:|STARTS:|ENDS:).*"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ExpectUnion">
+    <xs:union memberTypes="tns:ExpectRegex tns:ExpectCompare tns:ExpectContains tns:ExpectLiteral"/>
+  </xs:simpleType>
+
+  <!-- Regex options -->
+  <xs:simpleType name="RegexOptionsList">
+    <xs:list>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="IgnoreCase"/>
+          <xs:enumeration value="Multiline"/>
+          <xs:enumeration value="Singleline"/>
+          <xs:enumeration value="ExplicitCapture"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:list>
+  </xs:simpleType>
+
+  <!-- Complex types -->
+  <xs:complexType name="Check">
+    <xs:attribute name="expect" type="tns:ExpectUnion" use="required"/>
+    <xs:attribute name="sourceRef" type="tns:IdString" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="Checks">
+    <xs:sequence>
+      <xs:element name="check" type="tns:Check" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Extract">
+    <xs:sequence>
+      <xs:element name="checks" type="tns:Checks" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="tns:IdString" use="required"/>
+    <xs:attribute name="pattern" type="tns:NonEmptyString" use="required"/>
+    <xs:attribute name="options" type="tns:RegexOptionsList" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="Extracts">
+    <xs:sequence>
+      <xs:element name="extract" type="tns:Extract" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Params">
+    <xs:sequence>
+      <xs:any processContents="skip" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Headers">
+    <xs:sequence>
+      <xs:any processContents="skip" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Interaction">
+    <xs:sequence>
+      <xs:any processContents="skip" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Step">
+    <xs:sequence>
+      <xs:element name="params" type="tns:Params" minOccurs="0"/>
+      <xs:element name="headers" type="tns:Headers" minOccurs="0"/>
+      <xs:element name="extracts" type="tns:Extracts" minOccurs="0"/>
+      <xs:element name="interaction" type="tns:Interaction" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="tns:IdString" use="required"/>
+    <xs:attribute name="alias" type="xs:string" use="optional"/>
+    <xs:attribute name="target" type="tns:NonEmptyString" use="required"/>
+    <xs:attribute name="targetType" type="tns:TargetType" use="required"/>
+    <xs:attribute name="timeout" type="xs:nonNegativeInteger" use="required"/>
+    <xs:attribute name="method" type="tns:HttpMethod" use="optional"/>
+    <xs:attribute name="command" type="xs:string" use="optional"/>
+    
+    <!-- XSD 1.1 assertions -->
+    <xs:assert test="if (@targetType = 'http') then exists(@method) else true()" 
+               xerces:message="HTTP steps must have method attribute"/>
+    <xs:assert test="@timeout >= 0" 
+               xerces:message="Timeout must be non-negative"/>
+  </xs:complexType>
+
+  <xs:complexType name="Steps">
+    <xs:sequence>
+      <xs:element name="step" type="tns:Step" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Ref">
+    <xs:attribute name="step" type="tns:IdString" use="required"/>
+    <xs:attribute name="mode" type="tns:RefMode" use="optional" default="id"/>
+    
+    <!-- XSD 1.1 assertions for conditional references -->
+    <xs:assert test="if (@mode = 'id') then 
+                      @step = //tns:step/@id 
+                     else if (@mode = 'alias') then 
+                      @step = //tns:step/@alias 
+                     else true()" 
+               xerces:message="ref@step must reference existing step id or alias based on mode"/>
+  </xs:complexType>
+
+  <xs:complexType name="Refs">
+    <xs:sequence>
+      <xs:element name="ref" type="tns:Ref" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Section">
+    <xs:sequence>
+      <xs:element name="refs" type="tns:Refs" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="tns:IdString" use="required"/>
+    <xs:attribute name="name" type="xs:string" use="optional"/>
+    <xs:attribute name="type" type="tns:SectionType" use="optional" default="serial"/>
+    <xs:attribute name="failContinue" type="xs:boolean" use="optional" default="false"/>
+    <xs:attribute name="retryCount" type="xs:nonNegativeInteger" use="optional" default="0"/>
+    <xs:attribute name="retestPoint" type="xs:string" use="optional"/>
+    <xs:attribute name="passNext" type="tns:IdString" use="optional"/>
+    <xs:attribute name="failNext" type="tns:IdString" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="Sections">
+    <xs:sequence>
+      <xs:element name="section" type="tns:Section" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Session">
+    <xs:attribute name="name" type="tns:IdString" use="required"/>
+    <xs:attribute name="type" type="tns:TargetType" use="required"/>
+    <xs:attribute name="host" type="xs:string" use="optional"/>
+    <xs:attribute name="port" type="xs:positiveInteger" use="optional"/>
+    <xs:attribute name="baseUrl" type="xs:anyURI" use="optional"/>
+    <xs:attribute name="user" type="xs:string" use="optional"/>
+    <xs:attribute name="password" type="xs:string" use="optional"/>
+    <xs:attribute name="prompt" type="xs:string" use="optional"/>
+    
+    <!-- XSD 1.1 assertions for conditional required fields -->
+    <xs:assert test="if (@type = ('ssh', 'telnet')) then (exists(@host) and exists(@port)) else true()" 
+               xerces:message="SSH and Telnet sessions must have host and port"/>
+    <xs:assert test="if (@type = 'http') then exists(@baseUrl) else true()" 
+               xerces:message="HTTP sessions must have baseUrl"/>
+  </xs:complexType>
+
+  <xs:complexType name="Sessions">
+    <xs:sequence>
+      <xs:element name="session" type="tns:Session" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Meta">
+    <xs:sequence>
+      <xs:any processContents="skip" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Config">
+    <xs:sequence>
+      <xs:any processContents="skip" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Functions">
+    <xs:sequence>
+      <xs:any processContents="skip" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TestGroups">
+    <xs:sequence>
+      <xs:any processContents="skip" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Test">
+    <xs:sequence>
+      <xs:element name="meta" type="tns:Meta" minOccurs="0"/>
+      <xs:element name="description" type="xs:string" minOccurs="0"/>
+      <xs:element name="displayOrder" type="xs:string" minOccurs="0"/>
+      <xs:element name="sessions" type="tns:Sessions" minOccurs="0"/>
+      <xs:element name="config" type="tns:Config" minOccurs="0"/>
+      <xs:element name="functions" type="tns:Functions" minOccurs="0"/>
+      <xs:element name="steps" type="tns:Steps" minOccurs="0"/>
+      <xs:element name="testGroups" type="tns:TestGroups" minOccurs="0"/>
+      <xs:element name="sections" type="tns:Sections" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="tns:IdString" use="required"/>
+    <xs:attribute name="alias" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <!-- Root element -->
+  <xs:element name="test" type="tns:Test">
+    <!-- Keys and key references for XSD 1.1 -->
+    
+    <!-- Step ID uniqueness -->
+    <xs:key name="stepIdKey">
+      <xs:selector xpath="tns:steps/tns:step"/>
+      <xs:field xpath="@id"/>
+    </xs:key>
+
+    <!-- Step Alias uniqueness (if present) -->
+    <xs:key name="stepAliasKey">
+      <xs:selector xpath="tns:steps/tns:step[@alias]"/>
+      <xs:field xpath="@alias"/>
+    </xs:key>
+
+    <!-- Section ID uniqueness -->
+    <xs:key name="sectionIdKey">
+      <xs:selector xpath="tns:sections/tns:section"/>
+      <xs:field xpath="@id"/>
+    </xs:key>
+
+    <!-- Extract name uniqueness within each step -->
+    <xs:key name="extractNameKey">
+      <xs:selector xpath="tns:steps/tns:step/tns:extracts/tns:extract"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+
+    <!-- Reference integrity -->
+    <xs:keyref name="checkSourceRefToExtract" refer="tns:extractNameKey">
+      <xs:selector xpath="tns:steps/tns:step/tns:extracts/tns:extract/tns:checks/tns:check"/>
+      <xs:field xpath="@sourceRef"/>
+    </xs:keyref>
+
+    <xs:keyref name="refStepToStepId" refer="tns:stepIdKey">
+      <xs:selector xpath="tns:sections/tns:section/tns:refs/tns:ref[not(@mode) or @mode='id']"/>
+      <xs:field xpath="@step"/>
+    </xs:keyref>
+
+    <xs:keyref name="refStepToStepAlias" refer="tns:stepAliasKey">
+      <xs:selector xpath="tns:sections/tns:section/tns:refs/tns:ref[@mode='alias']"/>
+      <xs:field xpath="@step"/>
+    </xs:keyref>
+  </xs:element>
+
+</xs:schema>
