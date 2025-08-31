@@ -5,18 +5,23 @@
     <version>1.0</version>
     <created>2024-01-01T00:00:00Z</created>
   </meta>
-  <description>Sample test demonstrating SSH connection and OS verification</description>
+  <description>Sample test demonstrating SSH connection and OS verification with GetOsViaSsh step</description>
+  <steps>
+    <step id="step1" alias="GetOsViaSsh" targetType="ssh" target="DUT_SSH" timeout="30" command="uname -a">
+      <extracts>
+        <extract name="os" pattern="(?i)Ubuntu">
+          <checks>
+            <check sourceRef="os" expect="Ubuntu" />
+          </checks>
+        </extract>
+      </extracts>
+    </step>
+  </steps>
   <sections>
     <section id="S1" alias="Setup">
-      <step id="step1" alias="GetOsViaSsh" targetType="ssh" target="DUT_SSH" timeout="30" command="uname -a">
-        <extracts>
-          <extract name="os" pattern="(?i)Ubuntu">
-            <checks>
-              <check sourceRef="os" expect="Ubuntu" />
-            </checks>
-          </extract>
-        </extracts>
-      </step>
+      <refs>
+        <ref step="step1" />
+      </refs>
     </section>
   </sections>
 </test>

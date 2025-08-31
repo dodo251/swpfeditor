@@ -26,14 +26,14 @@ jobs:
       - name: Restore
         run: dotnet restore
 
-      - name: Build (Release)
-        run: dotnet build --configuration Release --no-restore --nologo
+      - name: Build Domain Layer (Cross-Platform)
+        run: dotnet build SwpfEditor.CrossPlatform.sln --configuration Release --no-restore --nologo
 
-      - name: Test (if any)
-        run: |
-          $tests = Get-ChildItem -Recurse -Filter *.csproj | Where-Object { $_.FullName -match 'Test|Tests' }
-          if ($tests) { dotnet test --configuration Release --no-build --nologo } else { echo "No test projects, skip." }
-        shell: pwsh
+      - name: Test Domain Layer
+        run: dotnet test SwpfEditor.CrossPlatform.sln --configuration Release --no-build --nologo
+
+      - name: Build Full Solution (Windows)
+        run: dotnet build SwpfEditor.sln --configuration Release --no-restore --nologo
 
       # 找到 WPF 应用项目（包含 UseWPF 属性的项目）
       - name: Detect App csproj
@@ -42,7 +42,7 @@ jobs:
           $proj = Get-ChildItem -Recurse -Filter *.csproj |
                   Where-Object { 
                     $content = Get-Content $_.FullName -Raw
-                    $content -match '<UseWPF>true</UseWPF>' -or $content -match '<OutputType>WinExe</OutputType>'
+                    $content -match '<UseWPF>true</UseWPF>' -or $content -match '<OutputType>WinExe</OutputType>' -or ($_.FullName -notmatch 'Test|Tests' -and $_.FullName -match 'App')
                   } |
                   Select-Object -First 1
           if (-not $proj) { throw "No WPF app csproj found." }
@@ -87,3 +87,34 @@ jobs:
           path: |
             SwpfEditor-win-x64-${{ github.run_number }}.zip
             dist/runtime/test.exec.xml
+
+  # Cross-platform testing job for validation
+  test-cross-platform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore Cross-Platform
+        run: dotnet restore SwpfEditor.CrossPlatform.sln
+
+      - name: Build Cross-Platform
+        run: dotnet build SwpfEditor.CrossPlatform.sln --configuration Release --no-restore --nologo
+
+      - name: Test Cross-Platform
+        run: dotnet test SwpfEditor.CrossPlatform.sln --configuration Release --no-build --nologo
+
+      - name: Run Demo
+        run: dotnet run --project src/SwpfEditor.Demo/SwpfEditor.Demo.csproj --configuration Release --no-build

@@ -1,5 +1,10 @@
+using SwpfEditor.Domain.Enums;
+
 namespace SwpfEditor.Domain.Models;
 
+/// <summary>
+/// Root test configuration
+/// </summary>
 public class Test
 {
     public string Id { get; set; } = string.Empty;
@@ -13,6 +18,10 @@ public class Test
     public Steps? Steps { get; set; }
     public TestGroups? TestGroups { get; set; }
     public Sections? Sections { get; set; }
+    
+    // Alternative simplified structure for cross-platform compatibility
+    public List<Step> StepsList { get; set; } = new();
+    public List<Section> SectionsList { get; set; } = new();
 }
 
 public class Meta
@@ -28,6 +37,9 @@ public class Sessions
     public List<Session> SessionList { get; set; } = new();
 }
 
+/// <summary>
+/// Session configuration for connections
+/// </summary>
 public class Session
 {
     public string Name { get; set; } = string.Empty;
@@ -55,6 +67,9 @@ public class Steps
     public List<Step> StepList { get; set; } = new();
 }
 
+/// <summary>
+/// Test step execution unit
+/// </summary>
 public class Step
 {
     public string Id { get; set; } = string.Empty;
@@ -62,12 +77,18 @@ public class Step
     public string? Target { get; set; }
     public TargetType? TargetType { get; set; }
     public int? Timeout { get; set; }
-    public HttpMethod? Method { get; set; }
+    public Enums.HttpMethod? Method { get; set; }
     public string? Command { get; set; }
     public Params? Params { get; set; }
     public Headers? Headers { get; set; }
     public Extracts? Extracts { get; set; }
     public Interaction? Interaction { get; set; }
+    
+    // Alternative simplified structure for cross-platform compatibility
+    public List<Extract> ExtractsList { get; set; } = new();
+    public Dictionary<string, string> ParamsDict { get; set; } = new();
+    public Dictionary<string, string> HeadersDict { get; set; } = new();
+    public Dictionary<string, object> InteractionDict { get; set; } = new();
 }
 
 public class Params
@@ -97,12 +118,18 @@ public class Extracts
     public List<Extract> ExtractList { get; set; } = new();
 }
 
+/// <summary>
+/// Extract values from step execution
+/// </summary>
 public class Extract
 {
     public string Name { get; set; } = string.Empty;
     public string Pattern { get; set; } = string.Empty;
     public string? Options { get; set; }
     public Checks? Checks { get; set; }
+    
+    // Alternative simplified structure for cross-platform compatibility
+    public List<Check> ChecksList { get; set; } = new();
 }
 
 public class Checks
@@ -110,6 +137,9 @@ public class Checks
     public List<Check> CheckList { get; set; } = new();
 }
 
+/// <summary>
+/// Check validation for extracted values
+/// </summary>
 public class Check
 {
     public string SourceRef { get; set; } = string.Empty;
@@ -137,12 +167,25 @@ public class Sections
     public List<Section> SectionList { get; set; } = new();
 }
 
+/// <summary>
+/// Test section grouping steps
+/// </summary>
 public class Section
 {
     public string Id { get; set; } = string.Empty;
     public string? Alias { get; set; }
+    public string? Name { get; set; }
+    public SectionType Type { get; set; } = SectionType.Serial;
+    public bool FailContinue { get; set; }
+    public int RetryCount { get; set; }
+    public string? RetestPoint { get; set; }
+    public string? PassNext { get; set; }
+    public string? FailNext { get; set; }
     public List<Step> Steps { get; set; } = new();
     public Refs? Refs { get; set; }
+    
+    // Alternative simplified structure for cross-platform compatibility  
+    public List<Ref> RefsList { get; set; } = new();
 }
 
 public class Refs
@@ -150,6 +193,9 @@ public class Refs
     public List<Ref> RefList { get; set; } = new();
 }
 
+/// <summary>
+/// Reference to a step within a section
+/// </summary>
 public class Ref
 {
     public string Step { get; set; } = string.Empty;
