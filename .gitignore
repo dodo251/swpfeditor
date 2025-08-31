@@ -1,0 +1,13 @@
+﻿.vs/
+bin/
+obj/
+out/
+artifacts/
+TestResults/
+*.user
+*.suo
+*.rsuser
+*.userosscache
+*.sln.docstates
+.vscode/
+.idea/

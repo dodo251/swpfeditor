@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test id="T1" alias="SampleTest">
+  <section id="S1" alias="Setup">
+    <step id="step1" alias="GetOsViaSsh" targetType="ssh" target="DUT_SSH" method="exec" timeout="30">
+      <extract name="os" pattern="(?i)Ubuntu" />
+      <check sourceRef="os" expect="Ubuntu" />
+    </step>
+  </section>
+</test>

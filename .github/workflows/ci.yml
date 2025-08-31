@@ -1,22 +1,66 @@
-﻿name: Bootstrap CI
+﻿name: Build & Package (WPF)
+
 on:
   push:
   pull_request:
+
 jobs:
-  build:
+  build-test-package:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
 
-      # 仅当仓库里存在任意 .sln 时才编译
-      - name: Build (skip if no solution)
-        if: ${{ hashFiles('**/*.sln') != '' }}
-        run: dotnet build --nologo
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
 
-      # 仅当存在匹配的测试项目时才跑测试
-      - name: Test (skip if no test projects)
-        if: ${{ hashFiles('**/*Tests*.csproj') != '' }}
-        run: dotnet test --no-build --nologo
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build (Release)
+        run: dotnet build --configuration Release --no-restore --nologo
+
+      - name: Test (if any)
+        run: |
+          $tests = Get-ChildItem -Recurse -Filter *.csproj | Where-Object { $_.FullName -match 'Test|Tests' }
+          if ($tests) { dotnet test --configuration Release --no-build --nologo } else { echo "No test projects, skip." }
+        shell: pwsh
+
+      # 找到第一个非测试项目作为应用发布目标（WPF）
+      - name: Detect App csproj
+        id: detect
+        run: |
+          $proj = Get-ChildItem -Recurse -Filter *.csproj |
+                  Where-Object { $_.FullName -notmatch 'Test|Tests' } |
+                  Select-Object -First 1
+          if (-not $proj) { throw "No app csproj found." }
+          "APP_CSPROJ=$($proj.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "Detected: $($proj.FullName)"
+        shell: pwsh
+
+      - name: Publish win-x64 (self-contained)
+        run: |
+          $out = "out/win-x64"
+          dotnet publish "$env:APP_CSPROJ" -c Release -r win-x64 `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:PublishTrimmed=false `
+            --self-contained true `
+            -o $out
+          Compress-Archive -Path "$out/*" -DestinationPath "SwpfEditor-win-x64-${{ github.run_number }}.zip"
+        shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwpfEditor-win-x64-${{ github.run_number }}
+          path: SwpfEditor-win-x64-${{ github.run_number }}.zip
