@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Xml;
 using System.Xml.Linq;
 using Microsoft.Win32;
 
@@ -54,10 +55,19 @@ namespace SwpfEditor.App
                 if (dlg.ShowDialog() != true) return;
                 _currentPath = dlg.FileName;
             }
-            var settings = new UTF8Encoding(false);
-            using var fs = new StreamWriter(_currentPath!, false, settings);
-            // Preserve attribute order by writing manually (LINQ to XML preserves by insertion order we keep) with SaveOptions.DisableFormatting then simple pretty print.
-            _currentDoc.Save(fs, SaveOptions.None);
+            
+            // Save with proper formatting for minimal diffs
+            var settings = new XmlWriterSettings
+            {
+                Encoding = new UTF8Encoding(false), // UTF-8 without BOM
+                Indent = true,
+                IndentChars = "  ", // 2 spaces as per SRS
+                NewLineHandling = NewLineHandling.Replace,
+                OmitXmlDeclaration = false
+            };
+            
+            using var writer = XmlWriter.Create(_currentPath!, settings);
+            _currentDoc.Save(writer);
         }
 
         private void BtnValidate_OnClick(object sender, RoutedEventArgs e)
