@@ -485,3 +485,34 @@ public partial class MainViewModel : ObservableObject
         return steps;
     }
 }
+
+public partial class AttributeViewModel : ObservableObject
+{
+    private readonly XElement _owner;
+    private readonly XName _name;
+    private readonly Action? _onChanged;
+
+    [ObservableProperty]
+    private string _value;
+
+    public string Name { get; }
+
+    public AttributeViewModel(XElement owner, XAttribute attribute, Action? onChanged = null)
+    {
+        _owner = owner;
+        _name = attribute.Name;
+        _onChanged = onChanged;
+        Name = attribute.Name.LocalName;
+        _value = attribute.Value;
+    }
+
+    partial void OnValueChanged(string value)
+    {
+        var attr = _owner.Attribute(_name);
+        if (attr != null && attr.Value != value)
+        {
+            attr.Value = value;
+            _onChanged?.Invoke();
+        }
+    }
+}
