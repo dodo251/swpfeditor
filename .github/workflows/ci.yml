@@ -35,16 +35,19 @@ jobs:
           if ($tests) { dotnet test --configuration Release --no-build --nologo } else { echo "No test projects, skip." }
         shell: pwsh
 
-      # 找到第一个非测试项目作为应用发布目标（WPF）
+      # 找到 WPF 应用项目（包含 UseWPF 属性的项目）
       - name: Detect App csproj
         id: detect
         run: |
           $proj = Get-ChildItem -Recurse -Filter *.csproj |
-                  Where-Object { $_.FullName -notmatch 'Test|Tests' } |
+                  Where-Object { 
+                    $content = Get-Content $_.FullName -Raw
+                    $content -match '<UseWPF>true</UseWPF>' -or $content -match '<OutputType>WinExe</OutputType>'
+                  } |
                   Select-Object -First 1
-          if (-not $proj) { throw "No app csproj found." }
+          if (-not $proj) { throw "No WPF app csproj found." }
           "APP_CSPROJ=$($proj.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
-          Write-Host "Detected: $($proj.FullName)"
+          Write-Host "Detected WPF App: $($proj.FullName)"
         shell: pwsh
 
       - name: Publish win-x64 (self-contained)
