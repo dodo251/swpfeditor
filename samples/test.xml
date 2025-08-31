@@ -1,9 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<test id="T1" alias="SampleTest">
-  <section id="S1" alias="Setup">
-    <step id="step1" alias="GetOsViaSsh" targetType="ssh" target="DUT_SSH" method="exec" timeout="30">
-      <extract name="os" pattern="(?i)Ubuntu" />
-      <check sourceRef="os" expect="Ubuntu" />
+<test id="T1" alias="SampleTest" xmlns="http://sms.test/schema/1.0">
+  <description>Sample test demonstrating GetOsViaSsh with DUT_SSH connection mapping</description>
+  <steps>
+    <step id="step1" alias="GetOsViaSsh" targetType="ssh" target="DUT_SSH" timeout="30" command="uname -a">
+      <extracts>
+        <extract name="os" pattern="(?i)Ubuntu">
+          <checks>
+            <check sourceRef="os" expect="Ubuntu" />
+          </checks>
+        </extract>
+      </extracts>
     </step>
-  </section>
+  </steps>
+  <sections>
+    <section id="S1" name="Setup">
+      <refs>
+        <ref step="step1" />
+      </refs>
+    </section>
+  </sections>
 </test>
