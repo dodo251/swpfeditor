@@ -308,7 +308,7 @@ public static class XmlTestMapper
         }
 
         var methodStr = element.Attribute("method")?.Value;
-        if (Enum.TryParse<HttpMethod>(methodStr, true, out var method))
+        if (Enum.TryParse<Domain.Models.HttpMethod>(methodStr, true, out var method))
         {
             step.Method = method;
         }
