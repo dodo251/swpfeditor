@@ -5,8 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Xml;
 using System.Xml.Linq;
 using Microsoft.Win32;
+using SwpfEditor.App.Services;
+using SwpfEditor.App.ViewModels;
 
 namespace SwpfEditor.App
 {
@@ -17,10 +20,14 @@ namespace SwpfEditor.App
     {
         private XDocument? _currentDoc;
         private string? _currentPath;
+        private readonly MainViewModel _viewModel;
 
         public MainWindow()
         {
             InitializeComponent();
+            _viewModel = new MainViewModel();
+            DataContext = _viewModel;
+            
             // Auto load sample if exists
             var sample = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "samples", "test.xml");
             if (File.Exists(sample))
@@ -54,10 +61,16 @@ namespace SwpfEditor.App
                 if (dlg.ShowDialog() != true) return;
                 _currentPath = dlg.FileName;
             }
-            var settings = new UTF8Encoding(false);
-            using var fs = new StreamWriter(_currentPath!, false, settings);
-            // Preserve attribute order by writing manually (LINQ to XML preserves by insertion order we keep) with SaveOptions.DisableFormatting then simple pretty print.
-            _currentDoc.Save(fs, SaveOptions.None);
+            
+            try
+            {
+                _viewModel.SaveDocument(_currentPath);
+                MessageBox.Show("保存成功", "保存", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"保存失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void BtnValidate_OnClick(object sender, RoutedEventArgs e)
@@ -69,10 +82,10 @@ namespace SwpfEditor.App
         {
             try
             {
-                using var sr = new StreamReader(path, Encoding.UTF8, true);
-                var xml = XDocument.Load(sr, LoadOptions.SetLineInfo);
+                var xml = XmlFileService.LoadXmlFile(path);
                 _currentDoc = xml;
                 _currentPath = path;
+                _viewModel.LoadDocument(xml, path);
                 RefreshTree();
             }
             catch (Exception ex)
@@ -101,11 +114,7 @@ namespace SwpfEditor.App
 
         private string ElementHeader(XElement el)
         {
-            var id = el.Attribute("id")?.Value;
-            var alias = el.Attribute("alias")?.Value;
-            if (!string.IsNullOrWhiteSpace(alias)) return $"{el.Name.LocalName} ({alias})";
-            if (!string.IsNullOrWhiteSpace(id)) return $"{el.Name.LocalName} ({id})";
-            return el.Name.LocalName;
+            return XmlFileService.CreateElementHeader(el);
         }
 
         private void ScriptTree_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
