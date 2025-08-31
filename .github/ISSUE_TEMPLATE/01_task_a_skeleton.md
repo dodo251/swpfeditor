@@ -2,8 +2,9 @@
 name: "[A] Skeleton — WPF/MVVM + 基础展示"
 about: 创建 .NET 8 WPF 三栏骨架、打开/保存、树与属性展示、CI
 title: "[A] Skeleton — "
-labels: phase:A, type:feature, priority:normal
-assignees: ""
+labels: ''
+assignees: ''
+
 ---
 
 ## 背景

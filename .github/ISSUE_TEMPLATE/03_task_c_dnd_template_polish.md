@@ -2,8 +2,9 @@
 name: "[C] DnD + Template + Polish — 拖拽/模板/撤销重做/性能"
 about: 启用 Gong 拖拽、Template.xml 合法投放、Undo/Redo、性能与日志设置
 title: "[C] DnD + Template + Polish — "
-labels: phase:C, type:feature, priority:normal
-assignees: ""
+labels: ''
+assignees: ''
+
 ---
 
 ## 背景

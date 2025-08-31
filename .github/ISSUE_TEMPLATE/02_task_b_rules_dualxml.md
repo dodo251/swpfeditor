@@ -2,8 +2,9 @@
 name: "[B] Rules + Dual-XML — 强类型/XSD/映射/验证面板"
 about: 引入强类型 POCO、XSD(1.0/1.1)、占位符优先级、双 XML 会话映射与验证面板
 title: "[B] Rules + Dual-XML — "
-labels: phase:B, type:feature, priority:high
-assignees: ""
+labels: ''
+assignees: ''
+
 ---
 
 ## 背景
