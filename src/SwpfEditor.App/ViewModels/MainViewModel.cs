@@ -149,6 +149,12 @@ public partial class MainViewModel : ObservableObject
     private void ValidateFile()
     {
         ValidateCurrentTest();
+        
+        // Run specific test case: DUT_SSH auto-binding
+        if (CurrentTest != null && CurrentTestConfiguration != null)
+        {
+            TestDutSshBinding();
+        }
     }
 
     [RelayCommand]
@@ -366,5 +372,116 @@ public partial class MainViewModel : ObservableObject
     partial void OnSelectedTreeItemChanged(object? value)
     {
         // Trigger property panel updates when tree selection changes
+    }
+
+    private void TestDutSshBinding()
+    {
+        if (CurrentTest == null || CurrentTestConfiguration == null) return;
+
+        try
+        {
+            // Test case: DUT_SSH auto-binding
+            var dutSshSteps = FindStepsWithTarget("DUT_SSH");
+            var validationMessages = new List<string>();
+
+            foreach (var step in dutSshSteps)
+            {
+                // Test connection resolution
+                var connection = _connectionResolver.ResolveConnection(step, CurrentTestConfiguration);
+                if (connection != null)
+                {
+                    validationMessages.Add($"✓ Step '{step.Id}' successfully resolved DUT_SSH connection to {connection.Host}:{connection.Port}");
+                }
+                else
+                {
+                    validationMessages.Add($"✗ Step '{step.Id}' failed to resolve DUT_SSH connection");
+                }
+
+                // Test GetOsViaSsh specific validation
+                if (step.Id == "step1" && step.Alias == "GetOsViaSsh")
+                {
+                    if (step.TargetType == Domain.Models.TargetType.Ssh)
+                    {
+                        validationMessages.Add($"✓ GetOsViaSsh step has correct targetType (ssh)");
+                    }
+                    else
+                    {
+                        validationMessages.Add($"✗ GetOsViaSsh step has incorrect targetType: {step.TargetType}");
+                    }
+
+                    // Check extract and check for Ubuntu
+                    if (step.Extracts?.ExtractList?.Any(e => e.Name == "os") == true)
+                    {
+                        var osExtract = step.Extracts.ExtractList.First(e => e.Name == "os");
+                        if (osExtract.Checks?.CheckList?.Any(c => c.Expect.Contains("Ubuntu")) == true)
+                        {
+                            validationMessages.Add($"✓ GetOsViaSsh step correctly expects Ubuntu in checks");
+                        }
+                        else
+                        {
+                            validationMessages.Add($"✗ GetOsViaSsh step missing Ubuntu expectation in checks");
+                        }
+                    }
+                    else
+                    {
+                        validationMessages.Add($"✗ GetOsViaSsh step missing 'os' extract");
+                    }
+                }
+            }
+
+            // Test session auto-generation
+            if (CurrentTest.Sessions == null || CurrentTest.Sessions.SessionList.Count == 0)
+            {
+                var generatedSessions = _connectionResolver.GenerateSessionMappings(CurrentTest, CurrentTestConfiguration);
+                if (generatedSessions.SessionList.Any(s => s.Name == "DUT_SSH"))
+                {
+                    validationMessages.Add($"✓ Auto-generated session mapping for DUT_SSH");
+                }
+                else
+                {
+                    validationMessages.Add($"✗ Failed to auto-generate session mapping for DUT_SSH");
+                }
+            }
+
+            // Add test results to validation errors as info messages
+            foreach (var message in validationMessages)
+            {
+                ValidationErrors.Add(new ValidationError
+                {
+                    Message = $"[Test Case] {message}",
+                    Severity = message.StartsWith("✓") ? ValidationSeverity.Info : ValidationSeverity.Warning
+                });
+            }
+
+            StatusMessage += $" | Test Case: {validationMessages.Count(m => m.StartsWith("✓"))}/{validationMessages.Count} passed";
+        }
+        catch (Exception ex)
+        {
+            ValidationErrors.Add(new ValidationError
+            {
+                Message = $"[Test Case] Test failed: {ex.Message}",
+                Severity = ValidationSeverity.Error
+            });
+        }
+    }
+
+    private List<Step> FindStepsWithTarget(string target)
+    {
+        var steps = new List<Step>();
+        
+        if (CurrentTest?.Steps?.StepList != null)
+        {
+            steps.AddRange(CurrentTest.Steps.StepList.Where(s => s.Target == target));
+        }
+
+        if (CurrentTest?.Sections?.SectionList != null)
+        {
+            foreach (var section in CurrentTest.Sections.SectionList)
+            {
+                steps.AddRange(section.Steps.Where(s => s.Target == target));
+            }
+        }
+
+        return steps;
     }
 }

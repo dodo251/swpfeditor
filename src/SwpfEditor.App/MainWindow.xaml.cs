@@ -308,5 +308,50 @@ namespace SwpfEditor.App
             var errorCount = _viewModel.ValidationErrors.Count;
             Title = $"SMS Script Editor - {errorCount} validation issues";
         }
+
+        private void ValidationList_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (ValidationList.SelectedItem is ValidationError error && !string.IsNullOrEmpty(error.ElementId))
+            {
+                // Navigate to the element in tree
+                NavigateToElement(error.ElementId);
+            }
+        }
+
+        private void NavigateToElement(string elementId)
+        {
+            // Find and select the tree item with matching tag
+            if (ScriptTree.Items.Count > 0 && ScriptTree.Items[0] is TreeViewItem rootItem)
+            {
+                var found = FindTreeItemById(rootItem, elementId);
+                if (found != null)
+                {
+                    found.IsSelected = true;
+                    found.BringIntoView();
+                    found.Focus();
+                }
+            }
+        }
+
+        private TreeViewItem? FindTreeItemById(TreeViewItem item, string elementId)
+        {
+            // Check if current item matches
+            if (item.Tag is Test test && test.Id == elementId)
+                return item;
+            if (item.Tag is Section section && section.Id == elementId)
+                return item;
+            if (item.Tag is Step step && step.Id == elementId)
+                return item;
+
+            // Search children
+            foreach (TreeViewItem child in item.Items.OfType<TreeViewItem>())
+            {
+                var found = FindTreeItemById(child, elementId);
+                if (found != null)
+                    return found;
+            }
+
+            return null;
+        }
     }
 }
