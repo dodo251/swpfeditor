@@ -1,0 +1,13 @@
+# Global code owners for the SMS Script Editor (SwpfEditor) project
+# This ensures proper review coverage for all changes
+
+* @dodo251 @copilot
+
+# Critical files requiring extra attention
+/.github/ @dodo251
+/schemas/ @dodo251
+/docs/ @dodo251
+
+# Core application files
+/src/ @dodo251 @copilot
+/tests/ @dodo251 @copilot
