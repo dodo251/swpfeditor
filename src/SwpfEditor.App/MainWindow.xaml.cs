@@ -285,7 +285,7 @@ namespace SwpfEditor.App
             var label = new Label { Content = "Method", Width = 80 };
             var combo = new ComboBox { Width = 200 };
             
-            foreach (var method in Enum.GetValues<HttpMethod>())
+            foreach (var method in Enum.GetValues<Domain.Models.HttpMethod>())
             {
                 combo.Items.Add(method);
             }
@@ -293,7 +293,7 @@ namespace SwpfEditor.App
             combo.SelectedItem = step.Method;
             combo.SelectionChanged += (s, e) => 
             {
-                step.Method = (HttpMethod?)combo.SelectedItem;
+                step.Method = (Domain.Models.HttpMethod?)combo.SelectedItem;
                 _viewModel.HasUnsavedChanges = true;
             };
             
