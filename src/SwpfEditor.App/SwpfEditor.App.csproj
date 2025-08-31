@@ -15,4 +15,8 @@
     <PackageReference Include="gong-wpf-dragdrop" Version="3.2.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\samples\**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
+  </ItemGroup>
+
 </Project>

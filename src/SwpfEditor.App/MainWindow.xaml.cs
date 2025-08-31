@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Xml;
 using System.Xml.Linq;
 using Microsoft.Win32;
 using SwpfEditor.App.Models;
@@ -229,8 +230,7 @@ namespace SwpfEditor.App
         {
             try
             {
-                using var sr = new StreamReader(path, Encoding.UTF8, true);
-                var xml = XDocument.Load(sr, LoadOptions.SetLineInfo);
+                var xml = XmlFileService.LoadXmlFile(path);
                 _currentDoc = xml;
                 _currentPath = path;
                 _undoRedoService.Clear(); // Clear undo history for new file
@@ -266,11 +266,7 @@ namespace SwpfEditor.App
 
         private string ElementHeader(XElement el)
         {
-            var id = el.Attribute("id")?.Value;
-            var alias = el.Attribute("alias")?.Value;
-            if (!string.IsNullOrWhiteSpace(alias)) return $"{el.Name.LocalName} ({alias})";
-            if (!string.IsNullOrWhiteSpace(id)) return $"{el.Name.LocalName} ({id})";
-            return el.Name.LocalName;
+            return XmlFileService.CreateElementHeader(el);
         }
 
         private void ScriptTree_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
