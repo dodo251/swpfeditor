@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestConfiguration>
+  <UUT>
+    <Name>DUT_SSH</Name>
+    <Type>ssh</Type>
+    <Host>192.168.1.100</Host>
+    <Port>22</Port>
+    <User>testuser</User>
+    <Password>testpass</Password>
+    <Prompt>$</Prompt>
+  </UUT>
+  <LogDirectory>./logs</LogDirectory>
+  <SshList>
+    <Ssh Name="DUT_SSH" Host="192.168.1.100" Port="22" User="testuser" Password="testpass" Prompt="$" />
+  </SshList>
+  <TelnetList>
+    <Telnet Name="DUT_TELNET" Host="192.168.1.101" Port="23" User="admin" Password="admin" Prompt=">" />
+  </TelnetList>
+  <HttpList>
+    <Http Name="API_SERVER" BaseUrl="http://192.168.1.200:8080" />
+  </HttpList>
+  <Variables>
+    <Variable Name="TEST_ENV" Value="qa" />
+    <Variable Name="TIMEOUT_DEFAULT" Value="30" />
+  </Variables>
+  <Constants>
+    <Constant Name="EXPECTED_OS" Value="Ubuntu" />
+    <Constant Name="MAX_RETRIES" Value="3" />
+  </Constants>
+  <Inputs>
+    <Input Name="BUILD_VERSION" Value="1.0.0" />
+  </Inputs>
+</TestConfiguration>

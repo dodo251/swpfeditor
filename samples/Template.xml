@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Templates>
+  <Template name="Basic Step" category="Common">
+    <step id="newStep" alias="New Step" targetType="ssh" target="" timeout="30">
+      <extracts>
+        <extract name="result" pattern=".*" />
+      </extracts>
+    </step>
+  </Template>
+  
+  <Template name="HTTP GET" category="HTTP">
+    <step id="httpGet" alias="HTTP GET Request" targetType="http" target="" method="GET" timeout="30">
+      <headers>
+        <header name="Content-Type" value="application/json" />
+      </headers>
+      <extracts>
+        <extract name="response" pattern=".*" />
+      </extracts>
+    </step>
+  </Template>
+  
+  <Template name="SSH Command" category="SSH">
+    <step id="sshCmd" alias="SSH Command" targetType="ssh" target="" timeout="30" command="ls -la">
+      <extracts>
+        <extract name="output" pattern=".*" />
+      </extracts>
+    </step>
+  </Template>
+  
+  <Template name="Check Result" category="Validation">
+    <step id="checkStep" alias="Check Result" targetType="manual" timeout="5">
+      <extracts>
+        <extract name="value" pattern=".*">
+          <checks>
+            <check sourceRef="value" expect="expected_value" />
+          </checks>
+        </extract>
+      </extracts>
+    </step>
+  </Template>
+  
+  <Template name="Section" category="Structure">
+    <section id="newSection" alias="New Section">
+      <step id="sectionStep" alias="Section Step" targetType="ssh" target="" timeout="30">
+        <extracts>
+          <extract name="result" pattern=".*" />
+        </extracts>
+      </step>
+    </section>
+  </Template>
+  
+  <Template name="Telnet Command" category="Telnet">
+    <step id="telnetCmd" alias="Telnet Command" targetType="telnet" target="" timeout="30" command="show version">
+      <extracts>
+        <extract name="version" pattern="Version\s+(\S+)" />
+      </extracts>
+    </step>
+  </Template>
+</Templates>

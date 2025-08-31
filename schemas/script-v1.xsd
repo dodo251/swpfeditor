@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+  <!-- Root element -->
+  <xs:element name="test" type="TestType">
+    <!-- Keys for uniqueness constraints -->
+    <xs:key name="SessionNameKey">
+      <xs:selector xpath="sessions/session"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+    <xs:key name="StepIdKey">
+      <xs:selector xpath=".//step"/>
+      <xs:field xpath="@id"/>
+    </xs:key>
+    <xs:key name="ExtractNameKey">
+      <xs:selector xpath=".//extract"/>
+      <xs:field xpath="@name"/>
+    </xs:key>
+    
+    <!-- Key references for referential integrity -->
+    <xs:keyref name="CheckSourceRefKeyRef" refer="ExtractNameKey">
+      <xs:selector xpath=".//check"/>
+      <xs:field xpath="@sourceRef"/>
+    </xs:keyref>
+    <xs:keyref name="RefStepKeyRef" refer="StepIdKey">
+      <xs:selector xpath=".//ref"/>
+      <xs:field xpath="@step"/>
+    </xs:keyref>
+  </xs:element>
+
+  <!-- Complex Types -->
+  <xs:complexType name="TestType">
+    <xs:sequence>
+      <xs:element name="meta" type="MetaType" minOccurs="0"/>
+      <xs:element name="description" type="xs:string" minOccurs="0"/>
+      <xs:element name="displayOrder" type="xs:int" minOccurs="0"/>
+      <xs:element name="sessions" type="SessionsType" minOccurs="0"/>
+      <xs:element name="config" type="ConfigType" minOccurs="0"/>
+      <xs:element name="functions" type="FunctionsType" minOccurs="0"/>
+      <xs:element name="steps" type="StepsType" minOccurs="0"/>
+      <xs:element name="testGroups" type="TestGroupsType" minOccurs="0"/>
+      <xs:element name="sections" type="SectionsType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required"/>
+    <xs:attribute name="alias" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="MetaType">
+    <xs:sequence>
+      <xs:element name="author" type="xs:string" minOccurs="0"/>
+      <xs:element name="version" type="xs:string" minOccurs="0"/>
+      <xs:element name="created" type="xs:dateTime" minOccurs="0"/>
+      <xs:element name="modified" type="xs:dateTime" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="SessionsType">
+    <xs:sequence>
+      <xs:element name="session" type="SessionType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="SessionType">
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="type" type="TargetTypeEnum" use="required"/>
+    <xs:attribute name="host" type="xs:string"/>
+    <xs:attribute name="port" type="xs:int"/>
+    <xs:attribute name="baseUrl" type="xs:anyURI"/>
+    <xs:attribute name="user" type="xs:string"/>
+    <xs:attribute name="password" type="xs:string"/>
+    <xs:attribute name="prompt" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="ConfigType">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="FunctionsType">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="StepsType">
+    <xs:sequence>
+      <xs:element name="step" type="StepType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="StepType">
+    <xs:sequence>
+      <xs:element name="params" type="ParamsType" minOccurs="0"/>
+      <xs:element name="headers" type="HeadersType" minOccurs="0"/>
+      <xs:element name="extracts" type="ExtractsType" minOccurs="0"/>
+      <xs:element name="interaction" type="InteractionType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required"/>
+    <xs:attribute name="alias" type="xs:string"/>
+    <xs:attribute name="target" type="xs:string"/>
+    <xs:attribute name="targetType" type="TargetTypeEnum"/>
+    <xs:attribute name="timeout" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="method" type="HttpMethodEnum"/>
+    <xs:attribute name="command" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="ParamsType">
+    <xs:sequence>
+      <xs:element name="param" type="ParamType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ParamType">
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="value" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="HeadersType">
+    <xs:sequence>
+      <xs:element name="header" type="HeaderType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="HeaderType">
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="value" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="ExtractsType">
+    <xs:sequence>
+      <xs:element name="extract" type="ExtractType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ExtractType">
+    <xs:sequence>
+      <xs:element name="checks" type="ChecksType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="pattern" type="xs:string" use="required"/>
+    <xs:attribute name="options" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="ChecksType">
+    <xs:sequence>
+      <xs:element name="check" type="CheckType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="CheckType">
+    <xs:attribute name="sourceRef" type="xs:string" use="required"/>
+    <xs:attribute name="expect" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="InteractionType">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TestGroupsType">
+    <xs:sequence>
+      <xs:element name="testGroup" type="TestGroupType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TestGroupType">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="SectionsType">
+    <xs:sequence>
+      <xs:element name="section" type="SectionType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="SectionType">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="step" type="StepType"/>
+      <xs:element name="refs" type="RefsType"/>
+    </xs:choice>
+    <xs:attribute name="id" type="xs:ID" use="required"/>
+    <xs:attribute name="alias" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="RefsType">
+    <xs:sequence>
+      <xs:element name="ref" type="RefType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="RefType">
+    <xs:attribute name="step" type="xs:string" use="required"/>
+    <xs:attribute name="mode" type="RefModeEnum" default="id"/>
+  </xs:complexType>
+
+  <!-- Enumerations -->
+  <xs:simpleType name="TargetTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="ssh"/>
+      <xs:enumeration value="http"/>
+      <xs:enumeration value="telnet"/>
+      <xs:enumeration value="manual"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="HttpMethodEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="GET"/>
+      <xs:enumeration value="POST"/>
+      <xs:enumeration value="PUT"/>
+      <xs:enumeration value="DELETE"/>
+      <xs:enumeration value="PATCH"/>
+      <xs:enumeration value="HEAD"/>
+      <xs:enumeration value="OPTIONS"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="RefModeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="id"/>
+      <xs:enumeration value="alias"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>
