@@ -114,6 +114,7 @@ public class XmlMappingService
     public Test XmlToTest(XDocument document)
     {
         var root = document.Root ?? throw new ArgumentException("Document has no root element");
+        var ns = root.GetDefaultNamespace();
         
         var test = new Test
         {
@@ -122,7 +123,7 @@ public class XmlMappingService
         };
 
         // Parse meta
-        var metaElement = root.Element("meta");
+        var metaElement = root.Element(ns + "meta");
         if (metaElement != null)
         {
             foreach (var child in metaElement.Elements())
@@ -132,21 +133,21 @@ public class XmlMappingService
         }
 
         // Parse description
-        test.Description = root.Element("description")?.Value;
-        test.DisplayOrder = root.Element("displayOrder")?.Value;
+        test.Description = root.Element(ns + "description")?.Value;
+        test.DisplayOrder = root.Element(ns + "displayOrder")?.Value;
 
         // Parse sessions
-        var sessionsElement = root.Element("sessions");
+        var sessionsElement = root.Element(ns + "sessions");
         if (sessionsElement != null)
         {
-            foreach (var sessionElement in sessionsElement.Elements("session"))
+            foreach (var sessionElement in sessionsElement.Elements(ns + "session"))
             {
                 test.Sessions.Add(XmlToSession(sessionElement));
             }
         }
 
         // Parse config
-        var configElement = root.Element("config");
+        var configElement = root.Element(ns + "config");
         if (configElement != null)
         {
             foreach (var child in configElement.Elements())
@@ -156,7 +157,7 @@ public class XmlMappingService
         }
 
         // Parse functions
-        var functionsElement = root.Element("functions");
+        var functionsElement = root.Element(ns + "functions");
         if (functionsElement != null)
         {
             foreach (var child in functionsElement.Elements())
@@ -166,17 +167,17 @@ public class XmlMappingService
         }
 
         // Parse steps
-        var stepsElement = root.Element("steps");
+        var stepsElement = root.Element(ns + "steps");
         if (stepsElement != null)
         {
-            foreach (var stepElement in stepsElement.Elements("step"))
+            foreach (var stepElement in stepsElement.Elements(ns + "step"))
             {
                 test.Steps.Add(XmlToStep(stepElement));
             }
         }
 
         // Parse test groups
-        var testGroupsElement = root.Element("testGroups");
+        var testGroupsElement = root.Element(ns + "testGroups");
         if (testGroupsElement != null)
         {
             foreach (var child in testGroupsElement.Elements())
@@ -186,10 +187,10 @@ public class XmlMappingService
         }
 
         // Parse sections
-        var sectionsElement = root.Element("sections");
+        var sectionsElement = root.Element(ns + "sections");
         if (sectionsElement != null)
         {
-            foreach (var sectionElement in sectionsElement.Elements("section"))
+            foreach (var sectionElement in sectionsElement.Elements(ns + "section"))
             {
                 test.Sections.Add(XmlToSection(sectionElement));
             }
@@ -299,6 +300,7 @@ public class XmlMappingService
 
     private Step XmlToStep(XElement element)
     {
+        var ns = element.GetDefaultNamespace();
         var step = new Step
         {
             Id = element.Attribute("id")?.Value ?? "",
@@ -311,7 +313,7 @@ public class XmlMappingService
         };
 
         // Parse params
-        var paramsElement = element.Element("params");
+        var paramsElement = element.Element(ns + "params");
         if (paramsElement != null)
         {
             foreach (var child in paramsElement.Elements())
@@ -321,7 +323,7 @@ public class XmlMappingService
         }
 
         // Parse headers
-        var headersElement = element.Element("headers");
+        var headersElement = element.Element(ns + "headers");
         if (headersElement != null)
         {
             foreach (var child in headersElement.Elements())
@@ -331,17 +333,17 @@ public class XmlMappingService
         }
 
         // Parse extracts
-        var extractsElement = element.Element("extracts");
+        var extractsElement = element.Element(ns + "extracts");
         if (extractsElement != null)
         {
-            foreach (var extractElement in extractsElement.Elements("extract"))
+            foreach (var extractElement in extractsElement.Elements(ns + "extract"))
             {
                 step.Extracts.Add(XmlToExtract(extractElement));
             }
         }
 
         // Parse interaction
-        var interactionElement = element.Element("interaction");
+        var interactionElement = element.Element(ns + "interaction");
         if (interactionElement != null)
         {
             foreach (var child in interactionElement.Elements())
@@ -379,6 +381,7 @@ public class XmlMappingService
 
     private Extract XmlToExtract(XElement element)
     {
+        var ns = element.GetDefaultNamespace();
         var extract = new Extract
         {
             Name = element.Attribute("name")?.Value ?? "",
@@ -386,10 +389,10 @@ public class XmlMappingService
             Options = element.Attribute("options")?.Value
         };
 
-        var checksElement = element.Element("checks");
+        var checksElement = element.Element(ns + "checks");
         if (checksElement != null)
         {
-            foreach (var checkElement in checksElement.Elements("check"))
+            foreach (var checkElement in checksElement.Elements(ns + "check"))
             {
                 extract.Checks.Add(new Check
                 {
@@ -441,6 +444,7 @@ public class XmlMappingService
 
     private Section XmlToSection(XElement element)
     {
+        var ns = element.GetDefaultNamespace();
         var section = new Section
         {
             Id = element.Attribute("id")?.Value ?? "",
@@ -453,10 +457,10 @@ public class XmlMappingService
             FailNext = element.Attribute("failNext")?.Value
         };
 
-        var refsElement = element.Element("refs");
+        var refsElement = element.Element(ns + "refs");
         if (refsElement != null)
         {
-            foreach (var refElement in refsElement.Elements("ref"))
+            foreach (var refElement in refsElement.Elements(ns + "ref"))
             {
                 section.Refs.Add(new Ref
                 {
