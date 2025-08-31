@@ -1,4 +1,4 @@
-name: CI
+﻿name: Bootstrap CI
 on:
   push:
   pull_request:
@@ -10,7 +10,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Build
+
+      # 仅当仓库里存在任意 .sln 时才编译
+      - name: Build (skip if no solution)
+        if: ${{ hashFiles('**/*.sln') != '' }}
         run: dotnet build --nologo
-      - name: Test
+
+      # 仅当存在匹配的测试项目时才跑测试
+      - name: Test (skip if no test projects)
+        if: ${{ hashFiles('**/*Tests*.csproj') != '' }}
         run: dotnet test --no-build --nologo
