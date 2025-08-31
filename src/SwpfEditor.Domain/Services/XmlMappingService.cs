@@ -432,7 +432,7 @@ public class XmlMappingService
             {
                 var refElement = new XElement("ref",
                     new XAttribute("step", stepRef.Step));
-                if (stepRef.Mode != RefMode.Id)
+                if (stepRef.Mode != Enums.RefMode.Id)
                     refElement.Add(new XAttribute("mode", stepRef.Mode.ToString().ToLowerInvariant()));
                 refsElement.Add(refElement);
             }
@@ -473,15 +473,15 @@ public class XmlMappingService
         return section;
     }
 
-    private TargetType ParseTargetType(string value)
+    private Enums.TargetType ParseTargetType(string value)
     {
         return value.ToLowerInvariant() switch
         {
-            "ssh" => TargetType.Ssh,
-            "http" => TargetType.Http,
-            "telnet" => TargetType.Telnet,
-            "manual" => TargetType.Manual,
-            _ => TargetType.Manual
+            "ssh" => Enums.TargetType.Ssh,
+            "http" => Enums.TargetType.Http,
+            "telnet" => Enums.TargetType.Telnet,
+            "manual" => Enums.TargetType.Manual,
+            _ => Enums.TargetType.Manual
         };
     }
 
@@ -514,13 +514,13 @@ public class XmlMappingService
         };
     }
 
-    private RefMode ParseRefMode(string value)
+    private Enums.RefMode ParseRefMode(string value)
     {
         return value.ToLowerInvariant() switch
         {
-            "id" => RefMode.Id,
-            "alias" => RefMode.Alias,
-            _ => RefMode.Id
+            "id" => Enums.RefMode.Id,
+            "alias" => Enums.RefMode.Alias,
+            _ => Enums.RefMode.Id
         };
     }
 }
