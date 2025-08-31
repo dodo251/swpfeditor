@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:dd="urn:gong-wpf-dragdrop"
         mc:Ignorable="d"
         Title="SMS Script Editor" Height="600" Width="1100">
     <DockPanel>
@@ -12,31 +13,115 @@
                 <Button Content="打开" Name="BtnOpen" Click="BtnOpen_OnClick" />
                 <Button Content="保存" Name="BtnSave" Click="BtnSave_OnClick" />
                 <Separator/>
-                <Button Content="撤销" Name="BtnUndo" IsEnabled="False" />
-                <Button Content="重做" Name="BtnRedo" IsEnabled="False" />
+                <Button Content="撤销" Name="BtnUndo" Click="BtnUndo_OnClick" />
+                <Button Content="重做" Name="BtnRedo" Click="BtnRedo_OnClick" />
                 <Separator/>
                 <Button Content="验证" Name="BtnValidate" Click="BtnValidate_OnClick" />
+                <Separator/>
+                <Button Content="设置" Name="BtnSettings" Click="BtnSettings_OnClick" />
             </ToolBar>
         </ToolBarTray>
+        
+        <!-- Status bar at bottom -->
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock Name="StatusText" Text="Ready" />
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <TextBlock Name="ValidationStatus" Text="" />
+            </StatusBarItem>
+        </StatusBar>
+        
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*" />
                 <ColumnDefinition Width="3*" />
                 <ColumnDefinition Width="3*" />
             </Grid.ColumnDefinitions>
-            <!-- Left: Templates placeholder -->
+            
+            <!-- Left: Templates -->
             <Border Grid.Column="0" BorderBrush="#CCC" BorderThickness="0,0,1,0" Padding="4">
-                <TextBlock Text="模板（占位）" FontStyle="Italic" Foreground="Gray"/>
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="模板" FontWeight="Bold" Margin="0,0,0,8"/>
+                    <ListBox Name="TemplatesListBox" 
+                             dd:DragDrop.IsDragSource="True"
+                             dd:DragDrop.DragHandler="{Binding DragDropHandler, RelativeSource={RelativeSource AncestorType=Window}}"
+                             ItemsSource="{Binding Templates, RelativeSource={RelativeSource AncestorType=Window}}"
+                             DisplayMemberPath="DisplayName"
+                             ToolTip="{Binding SelectedItem.Description, RelativeSource={RelativeSource Self}}" />
+                </DockPanel>
             </Border>
+            
             <!-- Middle: Script Tree -->
             <Border Grid.Column="1" BorderBrush="#CCC" BorderThickness="0,0,1,0" Padding="4">
-                <TreeView x:Name="ScriptTree" SelectedItemChanged="ScriptTree_OnSelectedItemChanged"/>
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="脚本结构" FontWeight="Bold" Margin="0,0,0,8"/>
+                    <TreeView x:Name="ScriptTree" 
+                              SelectedItemChanged="ScriptTree_OnSelectedItemChanged"
+                              dd:DragDrop.IsDragSource="True"
+                              dd:DragDrop.IsDropTarget="True"
+                              dd:DragDrop.DragHandler="{Binding DragDropHandler, RelativeSource={RelativeSource AncestorType=Window}}"
+                              dd:DragDrop.DropHandler="{Binding DragDropHandler, RelativeSource={RelativeSource AncestorType=Window}}" />
+                </DockPanel>
             </Border>
-            <!-- Right: Properties -->
+            
+            <!-- Right: Properties and Validation -->
             <Border Grid.Column="2" Padding="4">
-                <ScrollViewer>
-                    <StackPanel x:Name="PropertiesPanel" />
-                </ScrollViewer>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="2*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Properties Panel -->
+                    <DockPanel Grid.Row="0">
+                        <TextBlock DockPanel.Dock="Top" Text="属性" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <ScrollViewer>
+                            <StackPanel x:Name="PropertiesPanel" />
+                        </ScrollViewer>
+                    </DockPanel>
+                    
+                    <!-- Validation/Log Panel -->
+                    <DockPanel Grid.Row="1" Margin="0,8,0,0">
+                        <TextBlock DockPanel.Dock="Top" Text="日志与验证" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <ScrollViewer>
+                            <ListBox Name="LogListBox" 
+                                     ItemsSource="{Binding LogEntries, RelativeSource={RelativeSource AncestorType=Window}}"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Timestamp, StringFormat=HH:mm:ss}" 
+                                                       Width="60" 
+                                                       FontFamily="Consolas" 
+                                                       Foreground="Gray"/>
+                                            <TextBlock Text="{Binding Level}" 
+                                                       Width="60" 
+                                                       FontWeight="Bold">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                                <Setter Property="Foreground" Value="Red"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Level}" Value="Warning">
+                                                                <Setter Property="Foreground" Value="Orange"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Level}" Value="Info">
+                                                                <Setter Property="Foreground" Value="Blue"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding Message}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Grid>
             </Border>
         </Grid>
     </DockPanel>

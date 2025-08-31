@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+  <!-- Test Step Templates -->
+  <template name="step" displayName="SSH Step" description="Execute command via SSH" allowedParents="steps">
+    <element>
+      <step id="step_placeholder" alias="New SSH Step" targetType="ssh" target="DUT_SSH" timeout="30" />
+    </element>
+  </template>
+  
+  <template name="httpStep" displayName="HTTP Step" description="Execute HTTP request" allowedParents="steps">
+    <element>
+      <step id="step_placeholder" alias="New HTTP Step" targetType="http" target="API_HTTP" method="GET" timeout="30" />
+    </element>
+  </template>
+  
+  <template name="manualStep" displayName="Manual Step" description="Manual verification step" allowedParents="steps">
+    <element>
+      <step id="step_placeholder" alias="Manual Verification" targetType="manual" timeout="300" />
+    </element>
+  </template>
+  
+  <!-- Section Template -->
+  <template name="section" displayName="Test Section" description="Group of test steps" allowedParents="sections">
+    <element>
+      <section id="section_placeholder" alias="New Section" />
+    </element>
+  </template>
+  
+  <!-- Extract Templates -->
+  <template name="extract" displayName="Regex Extract" description="Extract data using regex pattern" allowedParents="extracts">
+    <element>
+      <extract name="extracted_value" pattern=".*" />
+    </element>
+  </template>
+  
+  <template name="extractWithCheck" displayName="Extract + Check" description="Extract data and validate it" allowedParents="extracts">
+    <element>
+      <extract name="extracted_value" pattern=".*">
+        <checks>
+          <check sourceRef="extracted_value" expect="expected_value" />
+        </checks>
+      </extract>
+    </element>
+  </template>
+  
+  <!-- Check Template -->
+  <template name="check" displayName="Validation Check" description="Validate extracted data" allowedParents="checks">
+    <element>
+      <check sourceRef="extracted_value" expect="expected_value" />
+    </element>
+  </template>
+  
+  <!-- Session Templates -->
+  <template name="sshSession" displayName="SSH Session" description="SSH connection configuration" allowedParents="sessions">
+    <element>
+      <session name="NEW_SSH" type="ssh" host="localhost" port="22" user="user" password="password" />
+    </element>
+  </template>
+  
+  <template name="httpSession" displayName="HTTP Session" description="HTTP endpoint configuration" allowedParents="sessions">
+    <element>
+      <session name="NEW_HTTP" type="http" baseUrl="http://localhost:8080" />
+    </element>
+  </template>
+  
+  <!-- Container Templates -->
+  <template name="steps" displayName="Steps Container" description="Container for test steps" allowedParents="test">
+    <element>
+      <steps />
+    </element>
+  </template>
+  
+  <template name="sections" displayName="Sections Container" description="Container for test sections" allowedParents="test">
+    <element>
+      <sections />
+    </element>
+  </template>
+  
+  <template name="sessions" displayName="Sessions Container" description="Container for session configurations" allowedParents="test">
+    <element>
+      <sessions />
+    </element>
+  </template>
+  
+  <template name="extracts" displayName="Extracts Container" description="Container for data extracts" allowedParents="step">
+    <element>
+      <extracts />
+    </element>
+  </template>
+  
+  <template name="checks" displayName="Checks Container" description="Container for validation checks" allowedParents="extract">
+    <element>
+      <checks />
+    </element>
+  </template>
+</templates>
