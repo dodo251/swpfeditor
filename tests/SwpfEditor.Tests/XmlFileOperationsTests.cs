@@ -94,4 +94,50 @@ public class XmlFileOperationsTests
         Assert.Equal("T1", attrs[0].Value);
         Assert.Equal("Modified", attrs[1].Value);
     }
+
+    [Fact]
+    public void LoadSampleFile_ShouldLoadSuccessfully()
+    {
+        // Arrange
+        var samplePath = Path.Combine("..", "..", "..", "..", "..", "samples", "test.xml");
+        
+        // Skip test if sample file doesn't exist (CI scenarios)
+        if (!File.Exists(samplePath))
+        {
+            return; // Skip test
+        }
+        
+        // Act
+        var doc = XDocument.Load(samplePath);
+        
+        // Assert
+        Assert.NotNull(doc.Root);
+        Assert.Equal("test", doc.Root.Name.LocalName);
+        
+        // Should have the expected structure from the sample
+        Assert.Equal("T1", doc.Root.Attribute("id")?.Value);
+        Assert.Equal("SampleTest", doc.Root.Attribute("alias")?.Value);
+        
+        var section = doc.Root.Element("section");
+        Assert.NotNull(section);
+        Assert.Equal("S1", section.Attribute("id")?.Value);
+        Assert.Equal("Setup", section.Attribute("alias")?.Value);
+        
+        var step = section.Element("step");
+        Assert.NotNull(step);
+        Assert.Equal("step1", step.Attribute("id")?.Value);
+        Assert.Equal("GetOsViaSsh", step.Attribute("alias")?.Value);
+        Assert.Equal("ssh", step.Attribute("targetType")?.Value);
+        Assert.Equal("DUT_SSH", step.Attribute("target")?.Value);
+        
+        var extract = step.Element("extract");
+        Assert.NotNull(extract);
+        Assert.Equal("os", extract.Attribute("name")?.Value);
+        Assert.Equal("(?i)Ubuntu", extract.Attribute("pattern")?.Value);
+        
+        var check = step.Element("check");
+        Assert.NotNull(check);
+        Assert.Equal("os", check.Attribute("sourceRef")?.Value);
+        Assert.Equal("Ubuntu", check.Attribute("expect")?.Value);
+    }
 }
