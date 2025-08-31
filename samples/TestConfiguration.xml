@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestConfiguration xmlns="http://sms.test/config/1.0">
+  <UUT>
+    <SerialNumber>12345678ABCDEF01</SerialNumber>
+    <Model>TestDevice-X1</Model>
+    <MAC>00:11:22:33:44:55</MAC>
+  </UUT>
+  <LogDirectory>C:\TestLogs</LogDirectory>
+  <SshList>
+    <SshConnection Name="DUT_SSH" Host="192.168.1.100" Port="22" Username="admin" Password="secret123" Prompt="$" />
+    <SshConnection Name="AUX_SSH" Host="192.168.1.101" Port="22" Username="test" Password="test456" Prompt="#" />
+  </SshList>
+  <TelnetList>
+    <TelnetConnection Name="DUT_TELNET" Host="192.168.1.100" Port="23" Username="admin" Password="secret123" Prompt=">" />
+  </TelnetList>
+  <HttpList>
+    <HttpConnection Name="DUT_API" BaseUrl="http://192.168.1.100:8080" Username="api" Password="apikey123" Timeout="30" />
+    <HttpConnection Name="EXT_SERVICE" BaseUrl="https://api.external.com" Timeout="60" />
+  </HttpList>
+  <Variables>
+    <Variable Name="TEST_ENV" Value="production" />
+    <Variable Name="TIMEOUT_DEFAULT" Value="30" />
+    <Variable Name="RETRY_COUNT" Value="3" />
+  </Variables>
+  <Constants>
+    <Constant Name="EXPECTED_OS" Value="Ubuntu" />
+    <Constant Name="MIN_MEMORY" Value="1024" />
+    <Constant Name="OPERATOR_ID" Value="OP001A" />
+  </Constants>
+  <Inputs>
+    <Input Name="USER_NAME" Value="testuser" Type="string" />
+    <Input Name="BATCH_SIZE" Value="100" Type="integer" />
+    <Input Name="ENABLE_DEBUG" Value="false" Type="boolean" />
+  </Inputs>
+</TestConfiguration>
