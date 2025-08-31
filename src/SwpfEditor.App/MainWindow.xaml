@@ -61,7 +61,20 @@
                               dd:DragDrop.IsDragSource="True"
                               dd:DragDrop.IsDropTarget="True"
                               dd:DragDrop.DragHandler="{Binding DragDropHandler, RelativeSource={RelativeSource AncestorType=Window}}"
-                              dd:DragDrop.DropHandler="{Binding DragDropHandler, RelativeSource={RelativeSource AncestorType=Window}}" />
+                              dd:DragDrop.DropHandler="{Binding DragDropHandler, RelativeSource={RelativeSource AncestorType=Window}}">
+                        <TreeView.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="添加子元素" Name="MenuAddChild" Click="MenuAddChild_OnClick" />
+                                <MenuItem Header="删除元素" Name="MenuDelete" Click="MenuDelete_OnClick" />
+                                <Separator />
+                                <MenuItem Header="复制" Name="MenuCopy" Click="MenuCopy_OnClick" />
+                                <MenuItem Header="粘贴" Name="MenuPaste" Click="MenuPaste_OnClick" />
+                                <Separator />
+                                <MenuItem Header="展开所有" Name="MenuExpandAll" Click="MenuExpandAll_OnClick" />
+                                <MenuItem Header="折叠所有" Name="MenuCollapseAll" Click="MenuCollapseAll_OnClick" />
+                            </ContextMenu>
+                        </TreeView.ContextMenu>
+                    </TreeView>
                 </DockPanel>
             </Border>
             

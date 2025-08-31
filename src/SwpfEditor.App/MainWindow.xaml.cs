@@ -70,6 +70,9 @@ namespace SwpfEditor.App
             // Set data context and initialize UI
             DataContext = this;
             
+            // Add keyboard shortcuts
+            SetupKeyboardShortcuts();
+            
             // Wire up event handlers
             _undoRedoService.StateChanged += UndoRedoService_StateChanged;
             _loggingService.LogEntryAdded += LoggingService_LogEntryAdded;
@@ -166,8 +169,14 @@ namespace SwpfEditor.App
 
         private void BtnSettings_OnClick(object sender, RoutedEventArgs e)
         {
-            // TODO: Open settings dialog
-            MessageBox.Show("设置对话框（待实现）", "设置", MessageBoxButton.OK, MessageBoxImage.Information);
+            var settingsWindow = new SettingsWindow(_settingsService.Settings, newSettings =>
+            {
+                _settingsService.UpdateSettings(newSettings);
+                _loggingService.LogInfo("设置已更新");
+            });
+            
+            settingsWindow.Owner = this;
+            settingsWindow.ShowDialog();
         }
 
         private void BtnValidate_OnClick(object sender, RoutedEventArgs e)
@@ -366,6 +375,45 @@ namespace SwpfEditor.App
         
         #region Helper Methods
         
+        private void SetupKeyboardShortcuts()
+        {
+            // Undo: Ctrl+Z
+            var undoBinding = new KeyBinding(
+                new RelayCommand(() => BtnUndo_OnClick(this, new RoutedEventArgs())),
+                Key.Z, ModifierKeys.Control);
+            InputBindings.Add(undoBinding);
+            
+            // Redo: Ctrl+Y
+            var redoBinding = new KeyBinding(
+                new RelayCommand(() => BtnRedo_OnClick(this, new RoutedEventArgs())),
+                Key.Y, ModifierKeys.Control);
+            InputBindings.Add(redoBinding);
+            
+            // Save: Ctrl+S
+            var saveBinding = new KeyBinding(
+                new RelayCommand(() => BtnSave_OnClick(this, new RoutedEventArgs())),
+                Key.S, ModifierKeys.Control);
+            InputBindings.Add(saveBinding);
+            
+            // Open: Ctrl+O
+            var openBinding = new KeyBinding(
+                new RelayCommand(() => BtnOpen_OnClick(this, new RoutedEventArgs())),
+                Key.O, ModifierKeys.Control);
+            InputBindings.Add(openBinding);
+            
+            // New: Ctrl+N
+            var newBinding = new KeyBinding(
+                new RelayCommand(() => BtnNew_OnClick(this, new RoutedEventArgs())),
+                Key.N, ModifierKeys.Control);
+            InputBindings.Add(newBinding);
+            
+            // Validate: F5
+            var validateBinding = new KeyBinding(
+                new RelayCommand(() => BtnValidate_OnClick(this, new RoutedEventArgs())),
+                Key.F5, ModifierKeys.None);
+            InputBindings.Add(validateBinding);
+        }
+        
         private void LoadTemplatesIntoUI()
         {
             _templates.Clear();
@@ -395,5 +443,149 @@ namespace SwpfEditor.App
         }
         
         #endregion
+        
+        #region Context Menu Handlers
+        
+        private void MenuAddChild_OnClick(object sender, RoutedEventArgs e)
+        {
+            if (ScriptTree.SelectedItem is not TreeViewItem tvi || tvi.Tag is not XElement parent)
+                return;
+                
+            var allowedChildren = _validationService.GetAllowedChildren(parent.Name.LocalName).ToList();
+            if (!allowedChildren.Any())
+            {
+                MessageBox.Show($"元素 '{parent.Name.LocalName}' 不能包含子元素", "添加子元素", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            
+            // Simple dialog to choose child type
+            var childType = allowedChildren.First(); // For demo, use first available
+            var newElement = new XElement(childType);
+            
+            // Add some default attributes based on type
+            switch (childType.ToLower())
+            {
+                case "step":
+                    newElement.SetAttributeValue("id", $"step_{DateTimeOffset.Now.Ticks:x8}");
+                    newElement.SetAttributeValue("alias", "New Step");
+                    break;
+                case "section":
+                    newElement.SetAttributeValue("id", $"section_{DateTimeOffset.Now.Ticks:x8}");
+                    newElement.SetAttributeValue("alias", "New Section");
+                    break;
+                case "extract":
+                    newElement.SetAttributeValue("name", $"extract_{DateTimeOffset.Now.Ticks:x8}");
+                    newElement.SetAttributeValue("pattern", ".*");
+                    break;
+            }
+            
+            var command = new AddElementCommand(parent, newElement);
+            _undoRedoService.ExecuteCommand(command);
+            RefreshTree();
+            _loggingService.LogInfo($"添加了 <{childType}> 到 <{parent.Name.LocalName}>");
+        }
+        
+        private void MenuDelete_OnClick(object sender, RoutedEventArgs e)
+        {
+            if (ScriptTree.SelectedItem is not TreeViewItem tvi || tvi.Tag is not XElement element)
+                return;
+                
+            if (element.Parent == null)
+            {
+                MessageBox.Show("不能删除根元素", "删除元素", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            
+            var result = MessageBox.Show($"确定要删除元素 <{element.Name.LocalName}> 吗？", "删除元素",
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+                
+            if (result == MessageBoxResult.Yes)
+            {
+                var command = new RemoveElementCommand(element);
+                _undoRedoService.ExecuteCommand(command);
+                RefreshTree();
+                _loggingService.LogInfo($"删除了元素 <{element.Name.LocalName}>");
+            }
+        }
+        
+        private XElement? _copiedElement;
+        
+        private void MenuCopy_OnClick(object sender, RoutedEventArgs e)
+        {
+            if (ScriptTree.SelectedItem is not TreeViewItem tvi || tvi.Tag is not XElement element)
+                return;
+                
+            _copiedElement = new XElement(element);
+            _loggingService.LogInfo($"复制了元素 <{element.Name.LocalName}>");
+        }
+        
+        private void MenuPaste_OnClick(object sender, RoutedEventArgs e)
+        {
+            if (_copiedElement == null)
+            {
+                MessageBox.Show("没有复制的元素", "粘贴", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+                
+            if (ScriptTree.SelectedItem is not TreeViewItem tvi || tvi.Tag is not XElement parent)
+                return;
+                
+            if (!_validationService.IsValidChild(parent.Name.LocalName, _copiedElement.Name.LocalName))
+            {
+                var message = _validationService.GetValidationMessage(parent.Name.LocalName, _copiedElement.Name.LocalName);
+                MessageBox.Show(message, "粘贴", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            
+            var newElement = new XElement(_copiedElement);
+            var command = new AddElementCommand(parent, newElement);
+            _undoRedoService.ExecuteCommand(command);
+            RefreshTree();
+            _loggingService.LogInfo($"粘贴了元素 <{newElement.Name.LocalName}> 到 <{parent.Name.LocalName}>");
+        }
+        
+        private void MenuExpandAll_OnClick(object sender, RoutedEventArgs e)
+        {
+            ExpandCollapseAll(ScriptTree.Items, true);
+        }
+        
+        private void MenuCollapseAll_OnClick(object sender, RoutedEventArgs e)
+        {
+            ExpandCollapseAll(ScriptTree.Items, false);
+        }
+        
+        private void ExpandCollapseAll(ItemCollection items, bool expand)
+        {
+            foreach (TreeViewItem item in items)
+            {
+                item.IsExpanded = expand;
+                ExpandCollapseAll(item.Items, expand);
+            }
+        }
+        
+        #endregion
+    }
+
+    // Simple relay command for keyboard shortcuts
+    public class RelayCommand : System.Windows.Input.ICommand
+    {
+        private readonly Action _execute;
+        private readonly Func<bool>? _canExecute;
+
+        public RelayCommand(Action execute, Func<bool>? canExecute = null)
+        {
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            _canExecute = canExecute;
+        }
+
+        public event EventHandler? CanExecuteChanged
+        {
+            add => CommandManager.RequerySuggested += value;
+            remove => CommandManager.RequerySuggested -= value;
+        }
+
+        public bool CanExecute(object? parameter) => _canExecute?.Invoke() ?? true;
+        public void Execute(object? parameter) => _execute();
     }
 }

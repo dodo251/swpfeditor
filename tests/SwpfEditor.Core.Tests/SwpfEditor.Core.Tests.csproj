@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.0" />
+    <PackageReference Include="xunit" Version="2.4.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="6.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="System.Text.Json" Version="8.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\src\SwpfEditor.App\Services\IUndoRedoService.cs" Link="Services\IUndoRedoService.cs" />
+    <Compile Include="..\..\src\SwpfEditor.App\Services\UndoRedoService.cs" Link="Services\UndoRedoService.cs" />
+    <Compile Include="..\..\src\SwpfEditor.App\Services\TemplateService.cs" Link="Services\TemplateService.cs" />
+    <Compile Include="..\..\src\SwpfEditor.App\Services\SettingsService.cs" Link="Services\SettingsService.cs" />
+    <Compile Include="..\..\src\SwpfEditor.App\Services\LoggingService.cs" Link="Services\LoggingService.cs" />
+    <Compile Include="..\..\src\SwpfEditor.App\Validation\ValidationService.cs" Link="Validation\ValidationService.cs" />
+    <Compile Include="..\..\src\SwpfEditor.App\Models\XmlCommands.cs" Link="Models\XmlCommands.cs" />
+  </ItemGroup>
+
+</Project>
