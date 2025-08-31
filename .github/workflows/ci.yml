@@ -1,11 +1,45 @@
-﻿name: Build & Package (WPF)
+﻿name: Build & Test
 
 on:
   push:
   pull_request:
 
 jobs:
-  build-test-package:
+  test-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore Core Tests
+        run: dotnet restore tests/SwpfEditor.Core.Tests/
+
+      - name: Build Core Tests
+        run: dotnet build tests/SwpfEditor.Core.Tests/ --configuration Release --no-restore --nologo
+
+      - name: Run Core Tests
+        run: dotnet test tests/SwpfEditor.Core.Tests/ --configuration Release --no-build --nologo --logger trx --results-directory ./test-results
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-core
+          path: ./test-results
+
+  build-wpf:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,10 +63,10 @@ jobs:
       - name: Build (Release)
         run: dotnet build --configuration Release --no-restore --nologo
 
-      - name: Test (if any)
+      - name: Test WPF (if any)
         run: |
-          $tests = Get-ChildItem -Recurse -Filter *.csproj | Where-Object { $_.FullName -match 'Test|Tests' }
-          if ($tests) { dotnet test --configuration Release --no-build --nologo } else { echo "No test projects, skip." }
+          $tests = Get-ChildItem -Recurse -Filter *.csproj | Where-Object { $_.FullName -match 'Test|Tests' -and $_.FullName -notmatch 'Core\.Tests' }
+          if ($tests) { dotnet test --configuration Release --no-build --nologo } else { echo "No WPF test projects, skip." }
         shell: pwsh
 
       # 找到第一个非测试项目作为应用发布目标（WPF）
